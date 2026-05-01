@@ -431,7 +431,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <div class="tab" data-view="manager" onclick="switchTab('manager')">👥 OS Manager view</div>
 </div>
 
-<div class="page">
+<div class="page" id="main-page">
+
+  <!-- MANAGER VIEW -->
+  <div id="manager-view" style="display:none;margin-bottom:20px">
+    <div id="manager-panels"></div>
+  </div>
+
   <!-- SPOTLIGHT PANEL -->
   <div id="spotlight-panel">
     <div class="spotlight-head">
@@ -511,12 +517,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       </div>
     </div>
     <div id="sla-grid" class="sla-grid"></div>
-  </div>
-
-
-  <!-- MANAGER VIEW -->
-  <div id="manager-view" style="display:none;margin-bottom:20px">
-    <div id="manager-panels"></div>
   </div>
 
   <div class="legend">
@@ -606,7 +606,7 @@ const MANAGERS = [
   { name: 'Courtney Hodek', reps: ['Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston'] },
   { name: 'Alex Kney',      reps: ['Angie Guardado','Ashley Brown','Alberto Hermida','Pamela McClatchey','Nick Hoffman'] },
   { name: 'Aaron Kososky',  reps: ['Alejandra ChiHam','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde','Shannon Kemp'] },
-  { name: 'Allie Zanotti',  reps: ['Lydia Hopson','Alex Abreau','Christie Marshall','Jessica Fenn','Robisel Santos','Brian Edwards','Sabrina Tisdale'] },
+  { name: 'Allie Zanotti',  reps: ['Lydia Hopson','Alex Abreu','Christie Marshall','Jessica Fenn','Robisel Santos','Brian Edwards','Sabrina Tisdale'] },
 ];
 
 
@@ -664,7 +664,7 @@ const ALLOWED_RESOURCES = new Set([
   'Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston',
   'Angie Guardado','Ashley Brown','Alberto Hermida','Pamela McClatchey','Nick Hoffman',
   'Alejandra ChiHam','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde',
-  'Shannon Kemp','Lydia Hopson','Alex Abreau','Christie Marshall','Jessica Fenn',
+  'Shannon Kemp','Lydia Hopson','Alex Abreu','Christie Marshall','Jessica Fenn',
   'Robisel Santos','Brian Edwards','Sabrina Tisdale',
   '(unassigned)',
 ]);
@@ -1478,10 +1478,18 @@ function switchTab(v){
 
   // Show/hide manager view vs table
   const isManager = v === 'manager';
-  document.getElementById('manager-view').style.display = isManager ? 'block' : 'none';
-  document.querySelector('.tbl-section').style.display  = isManager ? 'none' : '';
-  document.querySelector('.legend').style.display       = isManager ? 'none' : '';
-  if (isManager) { buildManagerView(); return; }
+  const page = document.getElementById('main-page');
+  document.getElementById('manager-view').style.display  = isManager ? 'block' : 'none';
+  document.querySelector('.tbl-section').style.display   = isManager ? 'none'  : '';
+  document.querySelector('.legend').style.display        = isManager ? 'none'  : '';
+  document.getElementById('spotlight-panel').style.display = isManager ? 'none' : (spotlightResource ? 'block' : 'none');
+  // Hide summary sections in manager mode
+  ['kpi-grid','mid-grid','pipeline-section','mom-section','sla-section'].forEach(cls => {
+    const el = document.querySelector('.'+cls);
+    if(el) el.style.display = isManager ? 'none' : '';
+  });
+  document.querySelectorAll('.section-label').forEach(el => el.style.display = isManager ? 'none' : '');
+  if (isManager) { buildManagerView(); window.scrollTo({top:0,behavior:'smooth'}); return; }
 
   document.getElementById('sla-col-hdr').style.display=v==='complete'?'':'none';
   page=1;applyFilters();
