@@ -755,14 +755,23 @@ function showRestoreBanner(dateStr) {
 }
 
 // ── RESOURCE ALLOWLIST ───────────────────────────────────────────────────────
-const ALLOWED_RESOURCES = new Set([
+const ALLOWED_RESOURCES_LIST = [
   'Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston',
   'Angie Guardado','Ashley Brown','Alberto Hermida','Pam Mcclatchey','Nick Hoffman',
   'Alejandra Chiham','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde',
   'Shannon Kemp','Lydia Hopson','Alex Abreu','Christie Marshall','Jessica Fenn',
   'Robisel Santos','Brian Edwards','Sabrina Tisdale',
-  '(unassigned)',
-]);
+];
+// Case-insensitive lookup set
+const ALLOWED_RESOURCES_LOWER = new Set(ALLOWED_RESOURCES_LIST.map(n => n.toLowerCase().trim()));
+
+// Case-insensitive check — also build a canonical name map for display
+const ALLOWED_RESOURCES = {
+  has: (name) => {
+    if (!name || name === '(unassigned)') return true;
+    return ALLOWED_RESOURCES_LOWER.has(name.toLowerCase().trim());
+  }
+};
 
 
 // ── FIELD DEFINITIONS ────────────────────────────────────────────────────────
@@ -1200,14 +1209,14 @@ function buildManagerView() {
   };
 
   document.getElementById('manager-panels').innerHTML = MANAGERS.map(mgr => {
-    const teamOpen = openCases.filter(r => mgr.reps.includes(r.r));
-    const teamDone = doneCases.filter(r => mgr.reps.includes(r.r));
+    const teamOpen = openCases.filter(r => mgr.reps.some(rep => rep.toLowerCase().trim() === (r.r||'').toLowerCase().trim()));
+    const teamDone = doneCases.filter(r => mgr.reps.some(rep => rep.toLowerCase().trim() === (r.r||'').toLowerCase().trim()));
     const teamNW   = teamOpen.filter(r => r.bk === 'Non-Workable').length;
     const teamMed  = medianFn(teamOpen.map(r => r.ag)) || 0;
 
     const repCards = mgr.reps.map(rep => {
-      const myCases = openCases.filter(r => r.r === rep);
-      const myDone  = doneCases.filter(r => r.r === rep);
+      const myCases = openCases.filter(r => (r.r||'').toLowerCase().trim() === rep.toLowerCase().trim());
+      const myDone  = doneCases.filter(r => (r.r||'').toLowerCase().trim() === rep.toLowerCase().trim());
       const myNW    = myCases.filter(r => r.bk === 'Non-Workable').length;
       const myMed   = medianFn(myCases.map(r => r.ag)) || 0;
       const initials = rep.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
