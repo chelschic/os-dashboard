@@ -601,11 +601,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </div><!-- /dashboard -->
 
 <script>
+
+// ── SCHEDULING CLASSIFICATION ────────────────────────────────────────────────
+const SCHEDULED_SUBSTATUS = new Set([
+  'oc scheduled','menu building','none','ready for menu build',
+  'mc scheduled','f/u mc scheduled','confirmed','auditing','install scheduled'
+]);
+
+function isScheduledNext(r) {
+  const ss = (r.ss || '').toLowerCase().trim();
+  return SCHEDULED_SUBSTATUS.has(ss);
+}
+
 // ── MANAGER TEAMS ────────────────────────────────────────────────────────────
 const MANAGERS = [
   { name: 'Courtney Hodek', reps: ['Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston'] },
-  { name: 'Alex Kney',      reps: ['Angie Guardado','Ashley Brown','Alberto Hermida','Pamela McClatchey','Nick Hoffman'] },
-  { name: 'Aaron Kososky',  reps: ['Alejandra ChiHam','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde','Shannon Kemp'] },
+  { name: 'Alex Kney',      reps: ['Angie Guardado','Ashley Brown','Alberto Hermida','Pam Mcclatchey','Nick Hoffman'] },
+  { name: 'Aaron Kososky',  reps: ['Alejandra Chiham','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde','Shannon Kemp'] },
   { name: 'Allie Zanotti',  reps: ['Lydia Hopson','Alex Abreu','Christie Marshall','Jessica Fenn','Robisel Santos','Brian Edwards','Sabrina Tisdale'] },
 ];
 
@@ -662,8 +674,8 @@ function showRestoreBanner(dateStr) {
 // ── RESOURCE ALLOWLIST ───────────────────────────────────────────────────────
 const ALLOWED_RESOURCES = new Set([
   'Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston',
-  'Angie Guardado','Ashley Brown','Alberto Hermida','Pamela McClatchey','Nick Hoffman',
-  'Alejandra ChiHam','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde',
+  'Angie Guardado','Ashley Brown','Alberto Hermida','Pam Mcclatchey','Nick Hoffman',
+  'Alejandra Chiham','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde',
   'Shannon Kemp','Lydia Hopson','Alex Abreu','Christie Marshall','Jessica Fenn',
   'Robisel Santos','Brian Edwards','Sabrina Tisdale',
   '(unassigned)',
@@ -889,7 +901,7 @@ function resetToUpload(){
   spotlightResource='';
   document.getElementById('spotlight-panel').style.display='none';
   document.getElementById('srch-input').value='';
-  workableFilter='all';setWorkable('all');
+  workableFilter='all';scheduleFilterState=null;setWorkable('all');
   try {
     localStorage.removeItem('ob_raw');
     localStorage.removeItem('ob_colmap');
@@ -1043,16 +1055,40 @@ function buildManagerView() {
       const myMed   = medianFn(myCases.map(r => r.ag)) || 0;
       const initials = rep.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
 
-      // Mini pipeline
-      const miniStages = STAGES.filter(s => s.key !== 'Implementation Complete').map(s => {
-        const cnt = myCases.filter(r => r.s === s.key).length;
+      // Mini pipeline — ALL stages including Installation
+      const miniStages = STAGES.map(s => {
+        const pool = s.key === 'Implementation Complete' ? myDone : myCases;
+        const cnt = pool.filter(r => r.s === s.key).length;
         const color = stageColors[s.key];
-        const short = s.label.replace('Menu ','').replace('Pre-Install Verif.','Pre-V').replace('Onboarding','Onboard');
+        const short = s.label
+          .replace('Menu ','')
+          .replace('Pre-Install Verif.','Pre-V')
+          .replace('Onboarding','Onboard')
+          .replace('Implementation Complete','Install');
         return `<div class="mgr-stage-mini" style="background:${color}18">
           <div class="mgr-stage-mini-n" style="color:${color}">${cnt}</div>
           <div class="mgr-stage-mini-l">${short}</div>
         </div>`;
       }).join('');
+
+      // Scheduling status boxes (open cases only)
+      const scheduledCases = myCases.filter(r => isScheduledNext(r));
+      const actionCases    = myCases.filter(r => !isScheduledNext(r));
+      const statusBoxes = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px">
+          <div style="background:#dbeafe;border-radius:5px;padding:6px 8px;text-align:center;cursor:pointer"
+               onclick="filterBySchedule('${rep.replace(/'/g,"\'")}', true)">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1e3a8a;margin-bottom:2px">📅 Scheduled Next Meeting</div>
+            <div style="font-size:18px;font-weight:700;color:#1e3a8a;line-height:1">${scheduledCases.length}</div>
+            <div style="font-size:9.5px;color:#3b82f6">${myCases.length ? Math.round(scheduledCases.length/myCases.length*100) : 0}%</div>
+          </div>
+          <div style="background:#fef3c7;border-radius:5px;padding:6px 8px;text-align:center;cursor:pointer"
+               onclick="filterBySchedule('${rep.replace(/'/g,"\'")}', false)">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#92400e;margin-bottom:2px">⚠️ Client Action Needed</div>
+            <div style="font-size:18px;font-weight:700;color:#b45309;line-height:1">${actionCases.length}</div>
+            <div style="font-size:9.5px;color:#d97706">${myCases.length ? Math.round(actionCases.length/myCases.length*100) : 0}%</div>
+          </div>
+        </div>`;
 
       // VSS mini chips (open cases)
       const vssChips = ['complete','scheduled','wiring_needed','needs_scheduled'].map(k => {
@@ -1077,6 +1113,7 @@ function buildManagerView() {
         </div>
         <div class="mgr-pipeline-mini">${miniStages}</div>
         <div class="mgr-vss-mini">${vssChips}</div>
+        ${statusBoxes}
       </div>`;
     }).join('');
 
@@ -1109,6 +1146,18 @@ function buildManagerView() {
   }).join('');
 }
 
+function filterBySchedule(rep, scheduled) {
+  switchTab('all');
+  document.getElementById('resource-filter').value = rep;
+  // We'll filter via search — set resource filter and apply, then highlight
+  applyFilters();
+  // Further client-side filter: show only scheduled or action-needed cases
+  // Store in a temp filter state
+  scheduleFilterState = { rep, scheduled };
+  applyFilters();
+  document.querySelector('.tbl-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function jumpToRep(rep) {
   // Switch to all-cases tab, set spotlight, scroll up
   switchTab('all');
@@ -1127,7 +1176,8 @@ const STAGES = [
   { key:'Implementation Complete',  label:'Installation',          cls:'col-complete'   },
 ];
 
-let pipelineFilter = { resource: null, stage: null }; // active drill-down cell
+let pipelineFilter = { resource: null, stage: null };
+let scheduleFilterState = null; // active drill-down cell
 
 function buildPipeline(openCases, allCases) {
   // Include complete cases in the last column
@@ -1462,7 +1512,7 @@ function buildMoM(cases){
     </table>`;
 }
 
-function setWorkable(m){
+function setWorkable(m){scheduleFilterState=null;
   workableFilter=m;
   document.getElementById('wb-all').className='workable-btn'+(m==='all'?' active-all':'');
   document.getElementById('wb-work').className='workable-btn'+(m==='work'?' active-work':'');
@@ -1491,6 +1541,7 @@ function switchTab(v){
   document.querySelectorAll('.section-label').forEach(el => el.style.display = isManager ? 'none' : '');
   if (isManager) { buildManagerView(); window.scrollTo({top:0,behavior:'smooth'}); return; }
 
+  scheduleFilterState=null;
   document.getElementById('sla-col-hdr').style.display=v==='complete'?'':'none';
   page=1;applyFilters();
 }
@@ -1520,6 +1571,10 @@ function applyFilters(){
     if(backlog&&r.bk!==backlog)return false;
     if(ageMin&&r.ag<ageMin)return false;
     if(vssF&&vssGroup(r.vss)!==vssF)return false;
+    if(scheduleFilterState){
+      if(scheduleFilterState.rep && (r.r||'(unassigned)')!==scheduleFilterState.rep) return false;
+      if(scheduleFilterState.scheduled !== isScheduledNext(r)) return false;
+    }
     return true;
   });
   document.getElementById('vis-cnt').textContent=`${filtered.length} cases`;
