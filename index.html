@@ -272,6 +272,35 @@ td.date-td{font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap}
 .vss-kpi-pct{font-size:10.5px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
 .vss-complete-v{color:#14532d}.vss-scheduled-v{color:#1e3a8a}.vss-wiring-v{color:#7f1d1d}.vss-needs-v{color:#713f12}
 
+
+/* ── MANAGER VIEW ── */
+.mgr-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:20px}
+.mgr-head{background:linear-gradient(135deg,#1e3a5f 0%,#1a56db 100%);padding:14px 20px;display:flex;align-items:center;gap:12px}
+.mgr-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.mgr-meta{font-size:11.5px;color:rgba(255,255,255,.65)}
+.mgr-team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0;border-top:none}
+.mgr-rep-card{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 16px;transition:.12s;cursor:pointer}
+.mgr-rep-card:hover{background:var(--brand-light)}
+.mgr-rep-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mgr-rep-avatar{width:34px;height:34px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.mgr-rep-name{font-size:13px;font-weight:600;color:var(--text)}
+.mgr-rep-sub{font-size:10.5px;color:var(--muted)}
+.mgr-rep-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.mgr-rep-kpi{text-align:center;background:var(--surface2);border-radius:5px;padding:5px 4px}
+.mgr-rep-kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.mgr-rep-kpi-val{font-size:16px;font-weight:700;line-height:1.2}
+.mgr-pipeline-mini{display:flex;gap:3px;margin-top:6px}
+.mgr-stage-mini{flex:1;border-radius:4px;padding:4px 2px;text-align:center;font-size:9px;font-weight:700}
+.mgr-stage-mini-n{font-size:13px;font-weight:700;line-height:1}
+.mgr-stage-mini-l{font-size:8px;color:var(--muted);margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.mgr-vss-mini{display:flex;gap:2px;margin-top:5px}
+.mgr-vss-chip{flex:1;border-radius:3px;padding:3px 2px;text-align:center;font-size:9.5px;font-weight:700}
+.mgr-summary-row{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:2px solid var(--border);background:var(--surface2)}
+.mgr-summary-kpi{padding:10px 14px;border-right:1px solid var(--border);text-align:center}
+.mgr-summary-kpi:last-child{border-right:none}
+.mgr-summary-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+.mgr-summary-val{font-size:20px;font-weight:700}
+
 /* ── SPOTLIGHT ── */
 #spotlight-panel{display:none;background:var(--surface);border:1px solid var(--brand);border-radius:var(--r);box-shadow:0 0 0 3px var(--brand-light),var(--sh2);overflow:hidden;margin-bottom:20px}
 .spotlight-head{background:linear-gradient(135deg,var(--brand-dark) 0%,var(--brand) 100%);padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -399,6 +428,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <div class="tab purple-tab" data-view="unassigned" onclick="switchTab('unassigned')">No resource <span class="cnt" id="cnt-unassigned">—</span></div>
   <div class="tab" data-view="oldage" onclick="switchTab('oldage')">Age 600+ days <span class="cnt" id="cnt-oldage">—</span></div>
   <div class="tab teal-tab" data-view="complete" onclick="switchTab('complete')">✅ Implementation complete <span class="cnt" id="cnt-complete">—</span></div>
+  <div class="tab" data-view="manager" onclick="switchTab('manager')">👥 OS Manager view</div>
 </div>
 
 <div class="page">
@@ -483,6 +513,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div id="sla-grid" class="sla-grid"></div>
   </div>
 
+
+  <!-- MANAGER VIEW -->
+  <div id="manager-view" style="display:none;margin-bottom:20px">
+    <div id="manager-panels"></div>
+  </div>
+
   <div class="legend">
     <div class="leg-item"><div class="leg-dot" style="background:#fee2e2"></div> Non-workable</div>
     <div class="leg-item"><div class="leg-dot" style="background:#f0fdf4"></div> Active / workable</div>
@@ -565,6 +601,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </div><!-- /dashboard -->
 
 <script>
+// ── MANAGER TEAMS ────────────────────────────────────────────────────────────
+const MANAGERS = [
+  { name: 'Courtney Hodek', reps: ['Taylor Glover','Blake Bost','Elena Lomeli','Monica Vontobel','Lucie Johnston'] },
+  { name: 'Alex Kney',      reps: ['Angie Guardado','Ashley Brown','Alberto Hermida','Pamela McClatchey','Nick Hoffman'] },
+  { name: 'Aaron Kososky',  reps: ['Alejandra ChiHam','Crystal Krawford','Amber Wegener','Tyra Kemp','Mikayla Gyde','Shannon Kemp'] },
+  { name: 'Allie Zanotti',  reps: ['Lydia Hopson','Alex Abreau','Christie Marshall','Jessica Fenn','Robisel Santos','Brian Edwards','Sabrina Tisdale'] },
+];
+
+
 // ── SITE SURVEY STATUS ───────────────────────────────────────────────────────
 function vssGroup(raw) {
   if (!raw) return 'needs_scheduled';
@@ -580,6 +625,39 @@ const VSS_LABELS = {
   wiring_needed:   { label:'Needs Wiring',     icon:'🔧', cls:'vss-wiring'    },
   needs_scheduled: { label:'Needs Scheduled',  icon:'📋', cls:'vss-needs'     },
 };
+
+// ── RESTORE FROM STORAGE ON PAGE LOAD ───────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('ob_raw');
+    const savedDate = localStorage.getItem('ob_saved');
+    if (saved) {
+      RAW = JSON.parse(saved);
+      if (RAW.length) {
+        const dateStr = savedDate || '';
+        document.getElementById('t-date').textContent = 'Data from ' + dateStr;
+        document.getElementById('upload-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        initDashboard();
+        // Show a subtle "restore" banner
+        showRestoreBanner(dateStr);
+        return;
+      }
+    }
+  } catch(e) { /* corrupt storage — ignore and show upload screen */ }
+});
+
+function showRestoreBanner(dateStr) {
+  const banner = document.createElement('div');
+  banner.id = 'restore-banner';
+  banner.innerHTML = `
+    <span>📂 Showing data uploaded ${dateStr}</span>
+    <button onclick="document.getElementById('restore-banner').remove()" 
+      style="background:none;border:none;color:inherit;cursor:pointer;font-size:13px;font-weight:700;padding:0 4px;opacity:.7">✕</button>`;
+  banner.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#1a56db;color:#fff;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(0,0,0,.2);font-family:DM Sans,sans-serif';
+  document.body.appendChild(banner);
+  setTimeout(() => { if(banner.parentNode) banner.remove(); }, 5000);
+}
 
 // ── RESOURCE ALLOWLIST ───────────────────────────────────────────────────────
 const ALLOWED_RESOURCES = new Set([
@@ -784,6 +862,14 @@ function loadData(){
 
   if(!RAW.length){showErr('No valid rows found after mapping. Check your column assignments.');return;}
 
+  // Persist data + column map so page refresh restores the dashboard
+  try {
+    localStorage.setItem('ob_raw',     JSON.stringify(RAW));
+    localStorage.setItem('ob_colmap',  JSON.stringify(colMap));
+    localStorage.setItem('ob_headers', JSON.stringify(fileHeaders));
+    localStorage.setItem('ob_saved',   new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}));
+  } catch(e) { /* storage full or private mode — just skip */ }
+
   document.getElementById('t-date').textContent='As of '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   document.getElementById('upload-screen').style.display='none';
   document.getElementById('dashboard').style.display='block';
@@ -804,6 +890,12 @@ function resetToUpload(){
   document.getElementById('spotlight-panel').style.display='none';
   document.getElementById('srch-input').value='';
   workableFilter='all';setWorkable('all');
+  try {
+    localStorage.removeItem('ob_raw');
+    localStorage.removeItem('ob_colmap');
+    localStorage.removeItem('ob_headers');
+    localStorage.removeItem('ob_saved');
+  } catch(e) {}
 }
 
 function showErr(m){const e=document.getElementById('upload-err');e.textContent=m;e.style.display='block';}
@@ -912,6 +1004,118 @@ function spDrill(resource, stage) {
   document.getElementById('status-filter').value   = stage;
   applyFilters();
   document.querySelector('.tbl-section').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+
+// ── MANAGER VIEW ─────────────────────────────────────────────────────────────
+function buildManagerView() {
+  const openCases = RAW.filter(r => !isComplete(r));
+  const doneCases = RAW.filter(r => isComplete(r));
+
+  const stageColors = {
+    'Onboarding':'#1a56db','Menu Build':'#047857',
+    'Menu Consultation':'#b45309','Pre-Install Verification':'#5b21b6',
+    'Implementation Complete':'#0e7490'
+  };
+  const vssColors = {
+    complete:'#dcfce7;color:#14532d', scheduled:'#dbeafe;color:#1e3a8a',
+    wiring_needed:'#fee2e2;color:#7f1d1d', needs_scheduled:'#fef3c7;color:#713f12'
+  };
+  const vssIcons = {complete:'✅',scheduled:'📅',wiring_needed:'🔧',needs_scheduled:'📋'};
+
+  const medianFn = arr => {
+    if(!arr.length) return null;
+    const s=[...arr].sort((a,b)=>a-b);
+    const m=Math.floor(s.length/2);
+    return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2);
+  };
+
+  document.getElementById('manager-panels').innerHTML = MANAGERS.map(mgr => {
+    const teamOpen = openCases.filter(r => mgr.reps.includes(r.r));
+    const teamDone = doneCases.filter(r => mgr.reps.includes(r.r));
+    const teamNW   = teamOpen.filter(r => r.bk === 'Non-Workable').length;
+    const teamMed  = medianFn(teamOpen.map(r => r.ag)) || 0;
+
+    const repCards = mgr.reps.map(rep => {
+      const myCases = openCases.filter(r => r.r === rep);
+      const myDone  = doneCases.filter(r => r.r === rep);
+      const myNW    = myCases.filter(r => r.bk === 'Non-Workable').length;
+      const myMed   = medianFn(myCases.map(r => r.ag)) || 0;
+      const initials = rep.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
+
+      // Mini pipeline
+      const miniStages = STAGES.filter(s => s.key !== 'Implementation Complete').map(s => {
+        const cnt = myCases.filter(r => r.s === s.key).length;
+        const color = stageColors[s.key];
+        const short = s.label.replace('Menu ','').replace('Pre-Install Verif.','Pre-V').replace('Onboarding','Onboard');
+        return `<div class="mgr-stage-mini" style="background:${color}18">
+          <div class="mgr-stage-mini-n" style="color:${color}">${cnt}</div>
+          <div class="mgr-stage-mini-l">${short}</div>
+        </div>`;
+      }).join('');
+
+      // VSS mini chips (open cases)
+      const vssChips = ['complete','scheduled','wiring_needed','needs_scheduled'].map(k => {
+        const cnt = myCases.filter(r => vssGroup(r.vss) === k).length;
+        const [bg, fg] = vssColors[k].split(';color:');
+        return `<div class="mgr-vss-chip" style="background:${bg};color:#${fg}">${vssIcons[k]} ${cnt}</div>`;
+      }).join('');
+
+      const workable = myCases.length - myNW;
+      return `<div class="mgr-rep-card" onclick="jumpToRep('${rep.replace(/'/g,"\'")}')">
+        <div class="mgr-rep-header">
+          <div class="mgr-rep-avatar">${initials}</div>
+          <div>
+            <div class="mgr-rep-name">${rep}</div>
+            <div class="mgr-rep-sub">${myCases.length} open · ${myDone.length} installed</div>
+          </div>
+        </div>
+        <div class="mgr-rep-kpis">
+          <div class="mgr-rep-kpi"><div class="mgr-rep-kpi-lbl">Open</div><div class="mgr-rep-kpi-val" style="color:var(--brand-dark)">${myCases.length}</div></div>
+          <div class="mgr-rep-kpi"><div class="mgr-rep-kpi-lbl">Workable</div><div class="mgr-rep-kpi-val" style="color:var(--green)">${workable}</div></div>
+          <div class="mgr-rep-kpi"><div class="mgr-rep-kpi-lbl">Med age</div><div class="mgr-rep-kpi-val" style="color:${myMed>=300?'var(--danger)':myMed>=150?'var(--warn)':'var(--purple)'}">${myMed}d</div></div>
+        </div>
+        <div class="mgr-pipeline-mini">${miniStages}</div>
+        <div class="mgr-vss-mini">${vssChips}</div>
+      </div>`;
+    }).join('');
+
+    // Team summary row
+    const teamWorkable = teamOpen.length - teamNW;
+    const teamOldest = teamOpen.length ? Math.max(...teamOpen.map(r=>r.ag)) : 0;
+    const vssTeamCounts = ['complete','scheduled','wiring_needed','needs_scheduled'].map(k =>
+      `<div class="mgr-summary-kpi">
+        <div class="mgr-summary-lbl">${vssIcons[k]} ${VSS_LABELS[k].label}</div>
+        <div class="mgr-summary-val" style="color:var(--text2)">${teamOpen.filter(r=>vssGroup(r.vss)===k).length}</div>
+      </div>`
+    ).join('');
+
+    return `<div class="mgr-section">
+      <div class="mgr-head">
+        <div>
+          <div class="mgr-name">👔 ${mgr.name}</div>
+          <div class="mgr-meta">${mgr.reps.length} reps · ${teamOpen.length} open cases · ${teamDone.length} installations</div>
+        </div>
+      </div>
+      <div class="mgr-team-grid">${repCards}</div>
+      <div class="mgr-summary-row">
+        <div class="mgr-summary-kpi"><div class="mgr-summary-lbl">Total open</div><div class="mgr-summary-val" style="color:var(--brand-dark)">${teamOpen.length}</div></div>
+        <div class="mgr-summary-kpi"><div class="mgr-summary-lbl">Workable</div><div class="mgr-summary-val" style="color:var(--green)">${teamWorkable}</div></div>
+        <div class="mgr-summary-kpi"><div class="mgr-summary-lbl">Non-workable</div><div class="mgr-summary-val" style="color:var(--danger)">${teamNW}</div></div>
+        <div class="mgr-summary-kpi"><div class="mgr-summary-lbl">Median age</div><div class="mgr-summary-val" style="color:var(--purple)">${teamMed}d</div></div>
+        <div class="mgr-summary-kpi"><div class="mgr-summary-lbl">Oldest case</div><div class="mgr-summary-val" style="color:var(--warn)">${teamOldest}d</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function jumpToRep(rep) {
+  // Switch to all-cases tab, set spotlight, scroll up
+  switchTab('all');
+  const sel = document.getElementById('spotlight-select');
+  sel.value = rep;
+  setSpotlight(rep);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 // ── PIPELINE ────────────────────────────────────────────────────────────────
@@ -1107,6 +1311,7 @@ function initDashboard(){
 
   buildSLA(done);
   buildPipeline(open, RAW);
+  // Manager view is built on-demand when tab is clicked
   currentView='all';
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view==='all'));
   document.getElementById('tbl-title').textContent='All open cases';
@@ -1268,8 +1473,16 @@ function setWorkable(m){
 function switchTab(v){
   currentView=v;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
-  const titles={all:'All open cases',nonwork:'Non-workable — blocked or paused',sequential:'Sequential expansion — waiting on prior location',unassigned:'No resource assigned',oldage:'Age 600+ days — long-running cases',complete:'Implementation complete — installed sites'};
-  document.getElementById('tbl-title').textContent=titles[v];
+  const titles={all:'All open cases',nonwork:'Non-workable — blocked or paused',sequential:'Sequential expansion — waiting on prior location',unassigned:'No resource assigned',oldage:'Age 600+ days — long-running cases',complete:'Implementation complete — installed sites',manager:'OS Manager view'};
+  document.getElementById('tbl-title').textContent=titles[v]||'';
+
+  // Show/hide manager view vs table
+  const isManager = v === 'manager';
+  document.getElementById('manager-view').style.display = isManager ? 'block' : 'none';
+  document.querySelector('.tbl-section').style.display  = isManager ? 'none' : '';
+  document.querySelector('.legend').style.display       = isManager ? 'none' : '';
+  if (isManager) { buildManagerView(); return; }
+
   document.getElementById('sla-col-hdr').style.display=v==='complete'?'':'none';
   page=1;applyFilters();
 }
