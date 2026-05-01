@@ -364,11 +364,27 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       </div>
       <div>
         <div class="upload-logo-text">SpotOn Onboarding</div>
-        <div class="upload-logo-sub">Daily Dashboard — Upload Your Spreadsheet</div>
+        <div class="upload-logo-sub">Daily Dashboard</div>
       </div>
     </div>
 
-    <!-- Visible label wrapping a real file input = works everywhere, no JS tricks -->
+    <!-- Primary: Load from Google Sheet -->
+    <button onclick="loadFromSheet()" id="btn-sheet"
+      style="width:100%;background:var(--brand);border:none;border-radius:var(--r2);padding:14px 0;font-size:14px;font-weight:700;font-family:inherit;color:#fff;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3-3m3 3l3-3"/><rect x="3" y="8" width="18" height="13" rx="2"/></svg>
+      Load Latest Data from Google Sheet
+    </button>
+
+    <div id="sheet-status" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:var(--r2);font-size:12px;font-weight:600;text-align:center"></div>
+
+    <!-- Divider -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--muted);font-weight:600">OR UPLOAD A FILE</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
+    <!-- Secondary: file upload -->
     <label for="file-input" class="drop-zone" id="drop-zone">
       <div class="drop-icon">📂</div>
       <div class="drop-title">Click here to choose your file</div>
@@ -378,11 +394,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     </label>
 
     <div id="file-chosen" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--brand-light);border:1px solid #bfdbfe;border-radius:var(--r2);font-size:12px;color:var(--brand);font-weight:600"></div>
-
-    <div class="upload-hint">
-      <strong>Column names are flexible</strong> — the dashboard will auto-detect common names and let you manually map anything it doesn't recognize.<br><br>
-      Expected columns: <strong>Case #, Account, Status, Sub-Status, Resource, Plan, Backlog Status, Backlog Reason, Date Opened, Date Closed, Latest Comment</strong>
-    </div>
 
     <div class="col-map" id="col-map">
       <div class="col-map-title">📋 Map your spreadsheet columns to dashboard fields</div>
@@ -415,9 +426,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <option value="">All resources</option>
     </select>
   </div>
-  <button class="btn-reload" onclick="resetToUpload()">
+  <button class="btn-reload" onclick="refreshFromSheet()" title="Reload from Google Sheet">
     <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
-    Upload new file
+    Refresh data
+  </button>
+  <button class="btn-reload" onclick="resetToUpload()" title="Upload a file instead">
+    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Upload file
   </button>
 </div>
 
@@ -436,6 +451,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <!-- MANAGER VIEW -->
   <div id="manager-view" style="display:none;margin-bottom:20px">
     <div id="manager-panels"></div>
+  </div>
+
+
+  <!-- EMPTY STATE — shown when no data loaded -->
+  <div id="empty-state" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">📊</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">No data loaded yet</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:24px;max-width:400px">Click <strong>Upload new file</strong> in the top bar to load your daily onboarding report.</div>
+    <button onclick="resetToUpload()" style="background:var(--brand);border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;font-family:inherit;color:#fff;cursor:pointer">
+      📂 Upload Spreadsheet
+    </button>
   </div>
 
   <!-- SPOTLIGHT PANEL -->
@@ -601,6 +627,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </div><!-- /dashboard -->
 
 <script>
+// ── GOOGLE SHEETS CONFIG ─────────────────────────────────────────────────────
+const SHEET_ID  = '1j7XS5VmaZJxBtdEPYn0OavyvIq9bSy4OH21mkCucwT8';
+const SHEET_GID = '0'; // change if your data is on a different tab (0 = first tab)
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}&cachebust=${Date.now()}`;
+
+
 
 // ── SCHEDULING CLASSIFICATION ────────────────────────────────────────────────
 const SCHEDULED_SUBSTATUS = new Set([
@@ -640,6 +672,39 @@ const VSS_LABELS = {
 
 // ── RESTORE FROM STORAGE ON PAGE LOAD ───────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  // If last load was from Google Sheet, auto-refresh on page load
+  try {
+    const source = localStorage.getItem('ob_source');
+    if (source === 'sheet') {
+      // Show dashboard briefly from cache, then silently refresh
+      const saved = localStorage.getItem('ob_raw');
+      if (saved) {
+        RAW = JSON.parse(saved);
+        if (RAW.length) {
+          document.getElementById('t-date').textContent = 'Refreshing…';
+          document.getElementById('upload-screen').style.display = 'none';
+          document.getElementById('dashboard').style.display = 'block';
+          initDashboard();
+          // Then refresh from sheet in background
+          refreshFromSheet();
+          return;
+        }
+      }
+      // No cache — show upload screen but auto-trigger sheet load
+      loadFromSheet();
+      return;
+    }
+  } catch(e) {}
+  // Original restore logic below:
+
+  // Always show dashboard — never show upload screen to end users
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Update EST timestamp in topbar
+  updateESTTime();
+  setInterval(updateESTTime, 60000); // refresh every minute
+
   try {
     const saved = localStorage.getItem('ob_raw');
     const savedDate = localStorage.getItem('ob_saved');
@@ -647,17 +712,35 @@ window.addEventListener('DOMContentLoaded', () => {
       RAW = JSON.parse(saved);
       if (RAW.length) {
         const dateStr = savedDate || '';
-        document.getElementById('t-date').textContent = 'Data from ' + dateStr;
-        document.getElementById('upload-screen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('t-date').textContent = 'As of ' + dateStr + ' EST';
         initDashboard();
-        // Show a subtle "restore" banner
         showRestoreBanner(dateStr);
         return;
       }
     }
-  } catch(e) { /* corrupt storage — ignore and show upload screen */ }
+  } catch(e) {}
+
+  // No data yet — show empty state
+  showEmptyState();
 });
+
+function updateESTTime() {
+  const now = new Date();
+  const est = now.toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+  const el = document.getElementById('t-date');
+  if (el && !RAW.length) el.textContent = est + ' EST';
+}
+
+function showEmptyState() {
+  // Show a clean "no data" prompt inside the dashboard
+  document.getElementById('manager-panels').innerHTML = '';
+  const empty = document.getElementById('empty-state');
+  if (empty) empty.style.display = 'flex';
+}
 
 function showRestoreBanner(dateStr) {
   const banner = document.createElement('div');
@@ -703,6 +786,124 @@ let RAW=[], parsedRows=[], fileHeaders=[], colMap={};
 let currentView='all', sortCol='ag', sortDir='desc', page=1;
 const PG=25;
 let filtered=[], workableFilter='all', completeCasesGlobal=[];
+
+
+// ── GOOGLE SHEETS LOADER ─────────────────────────────────────────────────────
+async function loadFromSheet() {
+  const btn = document.getElementById('btn-sheet');
+  const status = document.getElementById('sheet-status');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Loading from Google Sheet…';
+  status.style.display = 'block';
+  status.style.background = '#eff6ff';
+  status.style.color = 'var(--brand)';
+  status.style.border = '1px solid #bfdbfe';
+  status.textContent = 'Fetching latest data…';
+
+  try {
+    const resp = await fetch(CSV_URL);
+    if (!resp.ok) throw new Error('Could not fetch sheet (status ' + resp.status + '). Make sure the sheet is set to "Anyone with the link can view".');
+    const csv = await resp.text();
+    if (!csv || csv.trim().length < 10) throw new Error('Sheet appears empty.');
+
+    const rows = parseCSV(csv);
+    if (!rows || rows.length < 2) throw new Error('No data rows found in sheet.');
+
+    fileHeaders = rows[0].map(h => String(h||'').trim());
+    parsedRows  = rows.slice(1).filter(r => r.some(c => c !== null && c !== undefined && String(c).trim() !== ''));
+
+    autoDetect();
+
+    // Try to auto-load without showing column mapper if all required fields detected
+    const missing = FIELDS.filter(f => f.required && colMap[f.key] === undefined);
+    if (missing.length === 0) {
+      // All required cols found — go straight to dashboard
+      processAndLoad();
+    } else {
+      // Show mapper
+      status.textContent = '✓ Sheet loaded! Map any unrecognised columns below.';
+      buildColMapUI(parsedRows.length);
+      // Hide the sheet button area, show mapper
+      btn.style.display = 'none';
+    }
+  } catch(err) {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Retry — Load from Google Sheet';
+    status.style.background = '#fef2f2';
+    status.style.color = 'var(--danger)';
+    status.style.border = '1px solid #fca5a5';
+    status.textContent = '❌ ' + err.message;
+  }
+}
+
+async function refreshFromSheet() {
+  // Called from topbar Refresh button — silently reload
+  const btn = document.querySelector('.btn-reload');
+  if(btn) { btn.textContent = '⏳ Refreshing…'; btn.disabled = true; }
+  try {
+    const resp = await fetch(CSV_URL);
+    if (!resp.ok) throw new Error('Fetch failed');
+    const csv = await resp.text();
+    const rows = parseCSV(csv);
+    fileHeaders = rows[0].map(h => String(h||'').trim());
+    parsedRows  = rows.slice(1).filter(r => r.some(c => c !== null && c !== undefined && String(c).trim() !== ''));
+    autoDetect();
+    processAndLoad();
+    showRestoreBanner('Just now — refreshed from Google Sheet');
+  } catch(e) {
+    alert('Could not refresh from Google Sheet: ' + e.message);
+  } finally {
+    if(btn) { btn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg> Refresh data'; btn.disabled = false; }
+  }
+}
+
+// Shared processing after CSV is parsed (used by both sheet loader and file loader)
+function processAndLoad() {
+  colMap = {};
+  FIELDS.forEach(f => {
+    const sel = document.getElementById('cm-' + f.key);
+    if (sel && sel.value !== '') colMap[f.key] = parseInt(sel.value);
+    else if (colMap[f.key] === undefined && document.getElementById('cm-' + f.key) === null) {
+      // col-map not shown, use autoDetect result
+    }
+  });
+
+  const get = (row, key) => colMap[key] !== undefined ? String(row[colMap[key]]||'').trim() : '';
+
+  RAW = parsedRows.map(row => {
+    const openedStr = get(row,'openedAt');
+    const closedStr = get(row,'closedAt');
+    const openedDate = openedStr ? new Date(openedStr) : null;
+    const closedDate = closedStr ? new Date(closedStr) : null;
+    const validOpen  = openedDate && !isNaN(openedDate);
+    const validClose = closedDate && !isNaN(closedDate);
+    const status = get(row,'s');
+    const complete = status === 'Implementation Complete' || status.toLowerCase().includes('implementation complete');
+    let ag = 0;
+    if (validOpen) { const ref = validClose ? closedDate : new Date(); ag = Math.max(0, Math.round((ref - openedDate) / 86400000)); }
+    const sla = (complete && validOpen && validClose) ? Math.round((closedDate - openedDate) / 86400000) : null;
+    return { n:get(row,'n'), a:get(row,'a'), s:status, ss:get(row,'ss'), r:get(row,'r'), p:get(row,'p'),
+      ag, bk:get(row,'bk'), bksub:get(row,'bksub'),
+      openedAt: validOpen  ? openedDate.toISOString() : '',
+      closedAt: validClose ? closedDate.toISOString() : '',
+      lu:get(row,'lu'), vss:get(row,'vss'), sla };
+  })
+  .filter(r => r.n || r.a)
+  .filter(r => ALLOWED_RESOURCES.has(r.r || '(unassigned)'));
+
+  if (!RAW.length) { showErr('No valid rows found. Check column mappings or sheet sharing settings.'); return; }
+
+  try {
+    localStorage.setItem('ob_raw',    JSON.stringify(RAW));
+    localStorage.setItem('ob_saved',  new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}));
+    localStorage.setItem('ob_source', 'sheet');
+  } catch(e) {}
+
+  document.getElementById('t-date').textContent = 'As of ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  initDashboard();
+}
 
 // ── FILE HANDLING ────────────────────────────────────────────────────────────
 const fileInput = document.getElementById('file-input');
@@ -841,51 +1042,7 @@ function loadData(){
   });
   if(missing.length){showErr('Required columns not mapped: '+missing.join(', '));return;}
   if(!parsedRows.length){showErr('No data rows to load.');return;}
-
-  const get=(row,key)=>colMap[key]!==undefined?String(row[colMap[key]]||'').trim():'';
-
-  RAW=parsedRows.map(row=>{
-    const openedStr=get(row,'openedAt');
-    const closedStr=get(row,'closedAt');
-    const openedDate=openedStr?new Date(openedStr):null;
-    const closedDate=closedStr?new Date(closedStr):null;
-    const validOpen=openedDate&&!isNaN(openedDate);
-    const validClose=closedDate&&!isNaN(closedDate);
-    const status=get(row,'s');
-    const complete=status==='Implementation Complete'||status.toLowerCase().includes('implementation complete');
-
-    let ag=0;
-    if(validOpen){
-      const ref=validClose?closedDate:new Date();
-      ag=Math.max(0,Math.round((ref-openedDate)/86400000));
-    }
-
-    const sla=(complete&&validOpen&&validClose)?Math.round((closedDate-openedDate)/86400000):null;
-
-    return {
-      n:get(row,'n'),a:get(row,'a'),s:status,ss:get(row,'ss'),r:get(row,'r'),p:get(row,'p'),
-      ag,bk:get(row,'bk'),bksub:get(row,'bksub'),
-      openedAt:validOpen?openedDate.toISOString():'',
-      closedAt:validClose?closedDate.toISOString():'',
-      lu:get(row,'lu'),vss:get(row,'vss'),sla
-    };
-  }).filter(r=>r.n||r.a)
-   .filter(r=>ALLOWED_RESOURCES.has(r.r||'(unassigned)'));
-
-  if(!RAW.length){showErr('No valid rows found after mapping. Check your column assignments.');return;}
-
-  // Persist data + column map so page refresh restores the dashboard
-  try {
-    localStorage.setItem('ob_raw',     JSON.stringify(RAW));
-    localStorage.setItem('ob_colmap',  JSON.stringify(colMap));
-    localStorage.setItem('ob_headers', JSON.stringify(fileHeaders));
-    localStorage.setItem('ob_saved',   new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}));
-  } catch(e) { /* storage full or private mode — just skip */ }
-
-  document.getElementById('t-date').textContent='As of '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  document.getElementById('upload-screen').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  initDashboard();
+  processAndLoad();
 }
 
 function resetToUpload(){
@@ -1359,6 +1516,8 @@ function initDashboard(){
   pop('spotlight-select', allResources);
   document.getElementById('spotlight-panel').style.display='none';
 
+  const es = document.getElementById('empty-state');
+  if (es) es.style.display = 'none';
   buildSLA(done);
   buildPipeline(open, RAW);
   // Manager view is built on-demand when tab is clicked
